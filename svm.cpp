@@ -190,7 +190,7 @@ void Cache::swap_index(int i, int j)
 // the static method k_function is for doing single kernel evaluation
 // the constructor of Kernel prepares to calculate the l*l kernel matrix
 // the member function get_Q is for getting one column from the Q Matrix
-//
+// This modified by ahmed sabbah --> CHI_SQAURED added 
 class QMatrix {
 public:
 	virtual Qfloat *get_Q(int column, int len) const = 0;
