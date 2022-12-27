@@ -248,6 +248,15 @@ private:
 	{
 		return x[i][(int)(x[j][0].value)].value;
 	}
+
+	double kernel_chi_squared(int l, double x, double y)
+	{
+		int i;
+		double sum = 0;
+		for (i = 0; i < l; i++)
+			sum += (y[i] - x[i]) * (y[i] - x[i]) / (y[i] + x[i]);
+		return 1 - sum;
+	}
 };
 
 Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
@@ -270,6 +279,9 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 			break;
 		case PRECOMPUTED:
 			kernel_function = &Kernel::kernel_precomputed;
+			break;
+		case CHI_SQUARED:
+			kernel_function=&Kernel:: kernel_chi_squared;
 			break;
 	}
 
