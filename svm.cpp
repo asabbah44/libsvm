@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #include <limits.h>
 #include <locale.h>
-#include "svm.h"
+#include "svm.h"    // **************************** To bulid lib *********************** run "nmake -f Makefile.win lib"
 int libsvm_version = LIBSVM_VERSION;
 typedef float Qfloat;
 typedef signed char schar;
@@ -228,6 +228,8 @@ private:
 	const double coef0;
 
 	static double dot(const svm_node *px, const svm_node *py);
+	static double Kernel:: get_Chi2_Result(const svm_node* x, const svm_node* y); // Added by Ahmed Sabbah
+ 	
 	double kernel_linear(int i, int j) const
 	{
 		return dot(x[i],x[j]);
@@ -249,15 +251,40 @@ private:
 		return x[i][(int)(x[j][0].value)].value;
 	}
 
-	double kernel_chi_squared(int l, double x, double y)
+ double kernel_CHI2(int i, int j) const // New function added by Ahmed Sabbah
 	{
-		int i;
-		double sum = 0;
-		for (i = 0; i < l; i++)
-			sum += (y[i] - x[i]) * (y[i] - x[i]) / (y[i] + x[i]);
-		return 1 - sum;
+	 return get_Chi2_Result(x[i], x[j]);
 	}
 };
+
+double Kernel::get_Chi2_Result(const svm_node* x, const svm_node* y) // New function added by Ahmed Sabbah
+{
+	double sum = 0;
+	
+	while (x->index != -1 && y->index != -1)
+	{
+		double numerator = x->value - x->value;
+		double denominator = x->value + x->value;
+
+		if (x->index == y->index)
+		{
+
+			sum += (numerator * numerator) / denominator;
+			++x;
+			++y;
+		}
+		else
+		{
+			if (x->index > y->index)
+				++y;
+			else
+				++x;
+		}
+
+	}
+	return sum;
+	
+}
 
 Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 :kernel_type(param.kernel_type), degree(param.degree),
@@ -281,7 +308,7 @@ Kernel::Kernel(int l, svm_node * const * x_, const svm_parameter& param)
 			kernel_function = &Kernel::kernel_precomputed;
 			break;
 		case CHI_SQUARED:
-			kernel_function=&Kernel:: kernel_chi_squared;
+			kernel_function=&Kernel::kernel_CHI2; //Added by Ahmed sabbah
 			break;
 	}
 
@@ -379,6 +406,12 @@ double Kernel::k_function(const svm_node *x, const svm_node *y,
 			return tanh(param.gamma*dot(x,y)+param.coef0);
 		case PRECOMPUTED:  //x: test (validation), y: SV
 			return x[(int)(y->value)].value;
+
+		case CHI_SQUARED: // added by Ahmed Sabbah
+		{
+			return get_Chi2_Result(x, y);
+		}
+		break;
 		default:
 			return 0;  // Unreachable
 	}
@@ -2752,7 +2785,7 @@ static const char *svm_type_table[] =
 
 static const char *kernel_type_table[]=
 {
-	"linear","polynomial","rbf","sigmoid","precomputed",NULL
+	"linear","polynomial","rbf","sigmoid","precomputed","chi_squared",NULL // modified
 };
 
 int svm_save_model(const char *model_file_name, const svm_model *model)
@@ -3192,7 +3225,8 @@ const char *svm_check_parameter(const svm_problem *prob, const svm_parameter *pa
 	   kernel_type != POLY &&
 	   kernel_type != RBF &&
 	   kernel_type != SIGMOID &&
-	   kernel_type != PRECOMPUTED)
+	   kernel_type != PRECOMPUTED &&
+	   kernel_type != CHI_SQUARED)   // Updated by ahmed sabbah
 		return "unknown kernel type";
 
 	if((kernel_type == POLY || kernel_type == RBF || kernel_type == SIGMOID) &&
