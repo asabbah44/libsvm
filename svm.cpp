@@ -263,8 +263,8 @@ double Kernel::get_Chi2_Result(const svm_node* x, const svm_node* y) // New func
 	
 	while (x->index != -1 && y->index != -1)
 	{
-		double numerator = x->value - x->value;
-		double denominator = x->value + x->value;
+		double numerator = x->value - y->value;
+		double denominator = x->value + y->value;
 
 		if (x->index == y->index)
 		{
